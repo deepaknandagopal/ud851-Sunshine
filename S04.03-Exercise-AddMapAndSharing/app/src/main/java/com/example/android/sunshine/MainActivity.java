@@ -200,6 +200,22 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapterOn
             }
         }
     }
+    private void openLocationMap(){
+        String addressString = "12700 Bartram Park Blvd, Jacksonville, FL";
+        Uri location = Uri.parse("geo:0,0?q="+addressString);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(location);
+
+        if(intent.resolveActivity(getPackageManager())!=null)
+        {
+            startActivity(intent);
+        }
+        else
+        {
+            Log.d(TAG,"no receiving app");
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -218,6 +234,11 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapterOn
         if (id == R.id.action_refresh) {
             mForecastAdapter.setWeatherData(null);
             loadWeatherData();
+            return true;
+        }
+
+        if(id == R.id.action_map){
+            openLocationMap();
             return true;
         }
 
