@@ -15,7 +15,10 @@
  */
 package com.example.android.sunshine.utilities;
 
+import android.content.ContentValues;
 import android.content.Context;
+
+import com.example.android.sunshine.data.WeatherContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -100,27 +103,37 @@ public final class OpenWeatherJsonUtils {
 
         long startDay = SunshineDateUtils.getNormalizedUtcDateForToday();
 
-        for (int i = 0; i < weatherArray.length(); i++) {
-            String date;
-            String highAndLow;
+        ContentValues[] weatherContentValues = new ContentValues[weatherArray.length()];
 
-            /* These are the values that will be collected */
-            long dateTimeMillis;
+        for (int i = 0; i < weatherArray.length(); i++) {
+            long date;
+            double pressure;
+            int humidity;
+            double windSpeed;
+            double windDirection;
             double high;
             double low;
 
+            /* These are the values that will be collected */
+            long dateTimeMillis;
+
+
             int weatherId;
-            String description;
 
             /* Get the JSON object representing the day */
             JSONObject dayForecast = weatherArray.getJSONObject(i);
 
+
+            dateTimeMillis = startDay + SunshineDateUtils.DAY_IN_MILLIS * i;
+            pressure = dayForecast.getDouble(OWM_PRESSURE);
+            humidity = dayForecast.getInt(OWM_HUMIDITY);
+            windSpeed = dayForecast.getDouble(OWM_WINDSPEED);
+            windDirection = dayForecast.getDouble(OWM_WIND_DIRECTION);
             /*
              * We ignore all the datetime values embedded in the JSON and assume that
              * the values are returned in-order by day (which is not guaranteed to be correct).
              */
-            dateTimeMillis = startDay + SunshineDateUtils.DAY_IN_MILLIS * i;
-            date = SunshineDateUtils.getFriendlyDateString(context, dateTimeMillis, false);
+
 
             /*
              * Description is in a child array called "weather", which is 1 element long.
@@ -130,7 +143,6 @@ public final class OpenWeatherJsonUtils {
                     dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
 
             weatherId = weatherObject.getInt(OWM_WEATHER_ID);
-            description = SunshineWeatherUtils.getStringForWeatherCondition(context, weatherId);
 
             /*
              * Temperatures are sent by Open Weather Map in a child object called "temp".
@@ -142,9 +154,18 @@ public final class OpenWeatherJsonUtils {
             JSONObject temperatureObject = dayForecast.getJSONObject(OWM_TEMPERATURE);
             high = temperatureObject.getDouble(OWM_MAX);
             low = temperatureObject.getDouble(OWM_MIN);
-            highAndLow = SunshineWeatherUtils.formatHighLows(context, high, low);
 
-            parsedWeatherData[i] = date + " - " + description + " - " + highAndLow;
+            ContentValues weatherValues = new ContentValues();
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DATE,dateTimeMillis);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_HUMIDITY, humidity);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_PRESSURE, pressure);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WIND_SPEED, windSpeed);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DEGREES, windDirection);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP, high);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP, low);
+            weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID, weatherId);
+
+           weatherContentValues[i] = weatherValues;
         }
 
         return parsedWeatherData;
